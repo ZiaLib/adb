@@ -116,4 +116,5 @@ class AdbInternals {
     }
     return result.stdOut;
   }
+
 }

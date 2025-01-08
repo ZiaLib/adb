@@ -275,7 +275,7 @@ class Adb {
     return devices;
   }
 
-  Future<List<String>> getInstalledPacakges({
+  Future<List<String>> getInstalledPackages({
     String? device,
   }) async {
     await _adbInternals.ensureServerRunning();
@@ -291,6 +291,58 @@ class Adb {
       packages.add(package);
     }
     return packages;
+  }
+
+  Future<String> getPackagePath({String? device, required String packageName}) async {
+    await _adbInternals.ensureServerRunning();
+    final result = await io.Process.run(
+      'adb',
+      [
+        if (device != null) ...['-s', device],
+        'shell',
+        'pm',
+        'path',
+        packageName,
+        '--user',
+        '0',
+      ],
+      runInShell: true,
+    );
+    if (result.stdErr.isNotEmpty) {
+      throw Exception(result.stdErr);
+    }
+    return result.stdOut.trim().replaceFirst('package:', '');
+  }
+
+  Future<String> getFileMd5Hash({String? device, required String path}) async {
+    await _adbInternals.ensureServerRunning();
+    final result = await io.Process.run(
+      'adb',
+      [
+        if (device != null) ...['-s', device],
+        'shell',
+        'md5sum',
+        path,
+      ],
+      runInShell: true,
+    );
+    if (result.stdErr.isNotEmpty) {
+      throw Exception(result.stdErr);
+    }
+    final parts = result.stdOut.trim().split('\t');
+    if (parts.isEmpty) {
+      throw Exception('getFileMd5Hash failed.');
+    }
+    return parts.first;
+  }
+
+  Future<String> getPackageMd5Hash({
+    String? device,
+    required String packageName,
+  }) async {
+    await _adbInternals.ensureServerRunning();
+    final packagePath = await getPackagePath(device: device, packageName: packageName);
+    return getFileMd5Hash(device: device, path: packagePath);
   }
 
   void _handleAdbExceptions(String stdErr) {
