@@ -323,17 +323,14 @@ class Adb {
         'shell',
         'md5sum',
         path,
+        r"| awk '{print $1}'",
       ],
       runInShell: true,
     );
     if (result.stdErr.isNotEmpty) {
       throw Exception(result.stdErr);
     }
-    final parts = result.stdOut.trim().split('\t');
-    if (parts.isEmpty) {
-      throw Exception('getFileMd5Hash failed.');
-    }
-    return parts.first;
+    return result.stdOut.trim();
   }
 
   Future<String> getPackageMd5Hash({
