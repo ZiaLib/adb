@@ -342,6 +342,29 @@ class Adb {
     return getFileMd5Hash(device: device, path: packagePath);
   }
 
+  Future<void> clearPackageData({
+    String? device,
+    required String packageName,
+  }) async {
+    await _adbInternals.ensureServerRunning();
+    final result = await io.Process.run(
+      'adb',
+      [
+        if (device != null) ...['-s', device],
+        'shell',
+        'pm',
+        'clear',
+        packageName,
+        '--user',
+        '0',
+      ],
+      runInShell: true,
+    );
+    if (result.stdErr.isNotEmpty) {
+      throw Exception(result.stdErr);
+    }
+  }
+
   void _handleAdbExceptions(String stdErr) {
     if (stdErr.contains(AdbDaemonNotRunning.trigger)) {
       throw AdbDaemonNotRunning(message: stdErr);
